@@ -29,6 +29,7 @@ mod blinded_ipp;
 mod errors;
 mod generators;
 mod inner_product_proof;
+mod zk_inner_product_proof;
 mod k_hot_proof;
 mod linear_proof;
 mod range_proof;
@@ -43,6 +44,7 @@ pub use crate::k_hot_proof::KHotProof;
 pub use crate::linear_proof::LinearProof;
 pub use crate::range_proof::RangeProof;
 pub use crate::secagg_proof::SecAggProof;
+pub use crate::zk_inner_product_proof::ZKInnerProductProof;
 
 #[cfg_attr(feature = "docs", doc(include = "../docs/aggregation-api.md"))]
 pub mod range_proof_mpc {

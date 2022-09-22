@@ -106,3 +106,8 @@ harness = false
 [[bench]]
 name = "blinded_ipp"
 harness = false
+
+[[bench]]
+name = "zk_inner_product_proof"
+required-features = ["yoloproofs"]
+harness = false
