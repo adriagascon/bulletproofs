@@ -268,11 +268,6 @@ impl ZKInnerProductProof {
 
         // Verifier sends a challege x
         let x = transcript.challenge_scalar(b"x");
-        print!("x =  ");
-            for i in 0..32 {
-                print!("{} ", x.as_bytes()[i]);
-            }
-        print!("\n");
         
         // Define masked witness lx, rx, mx, for challenge x
         let lx = a[0] + ra * x;
@@ -300,11 +295,6 @@ impl ZKInnerProductProof {
         );
         // taux: blinding factor in commitment T1*x + T2*x*x 
         let taux = tau1 * x + tau2 * x * x;
-        print!("delta (assignment) =  ");
-        for i in 0..32 {
-            print!("{} ", delta.as_bytes()[i]);
-        }
-        print!("\n");
         ZKInnerProductProof {
             L_vec: L_vec,
             R_vec: R_vec,
@@ -352,15 +342,7 @@ impl ZKInnerProductProof {
         for (L, R) in self.L_vec.iter().zip(self.R_vec.iter()) {
             transcript.validate_and_append_point(b"L", L)?;
             transcript.validate_and_append_point(b"R", R)?;
-            let u = transcript.challenge_scalar(b"u");
-            print!("\n");
-            println!("challenge (prover) u = ");
-            for i in 0..32 {
-                print!("{} ", u.as_bytes()[i]);
-            }
-            print!("\n");
-
-            challenges.push(u);
+            challenges.push(transcript.challenge_scalar(b"u"));
         }
 
         // 2. Compute 1/(u_k...u_1) and 1/u_k, ..., 1/u_1
