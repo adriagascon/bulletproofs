@@ -20,16 +20,21 @@ use sha3::Sha3_512;
 
 
 /// Different zkIPP input vector lengths to try
-static TEST_SIZES: [usize; 15] = [
-    64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576,
-];
+static TEST_SIZES: [usize; 5] = [34, 64, 1024, 16384, 131072];
 
 fn create_ipp_helper(c: &mut Criterion) {
     c.bench_function_over_inputs(
         "ZK inner product proof creation",
         move |bench, n| {
             let mut transcript = Transcript::new(b"IPPBenchmark");
-            assert!(n % 2 == 0);
+
+            let even_n = if *n > 1 {*n + *n % 2} else {*n};
+            let mut aux = even_n;
+            let mut padding = 0;
+            while aux != 1 {
+                if aux % 2 == 1 {padding = padding + 1}
+                aux = (aux + aux % 2) / 2;        
+            }
 
             let pedersen_gens = PedersenGens::default();
             let Q = pedersen_gens.B_blinding;
@@ -38,12 +43,16 @@ fn create_ipp_helper(c: &mut Criterion) {
 
             let mut rng = rand::thread_rng();
 
-            let bp_gens = BulletproofGens::new(*n, 1);
-            let G_vec: Vec<RistrettoPoint> = bp_gens.share(0).G(*n).cloned().collect();
-            let H_vec: Vec<RistrettoPoint> = bp_gens.share(0).H(*n).cloned().collect();
+            let bp_gens = BulletproofGens::new(even_n+padding, 1);
+            let G_vec: Vec<RistrettoPoint> = bp_gens.share(0).G(even_n+padding).cloned().collect();
+            let H_vec: Vec<RistrettoPoint> = bp_gens.share(0).H(even_n+padding).cloned().collect();
 
-            let a_vec: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
-            let b_vec: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            let mut a_vec: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            let mut b_vec: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            if a_vec.len() > 1 && a_vec.len() % 2 != 0 {
+                a_vec.push(Scalar::zero());
+                b_vec.push(Scalar::zero());
+            }
 
             let G_factors: Vec<Scalar> = iter::repeat(Scalar::one()).take(*n).collect();
             // y_inv is (the inverse of) a random challenge
@@ -138,18 +147,30 @@ fn verify_ipp_helper(c: &mut Criterion) {
 
             let mut rng = rand::thread_rng();
 
-            let bp_gens = BulletproofGens::new(*n, 1);
-            let G: Vec<RistrettoPoint> = bp_gens.share(0).G(*n).cloned().collect();
-            let H: Vec<RistrettoPoint> = bp_gens.share(0).H(*n).cloned().collect();
+            let even_n = if *n > 1 {*n + *n % 2} else {*n};
+            let mut aux = even_n;
+            let mut padding = 0;
+            while aux != 1 {
+                if aux % 2 == 1 {padding = padding + 1}
+                aux = (aux + aux % 2) / 2;        
+            }
 
-            let a: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
-            let b: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            let bp_gens = BulletproofGens::new(even_n+padding, 1);
+            let G: Vec<RistrettoPoint> = bp_gens.share(0).G(even_n+padding).cloned().collect();
+            let H: Vec<RistrettoPoint> = bp_gens.share(0).H(even_n+padding).cloned().collect();
+
+            let mut a: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            let mut b: Vec<Scalar> = (0..*n).map(|_| Scalar::random(&mut rng)).collect();
+            if a.len() > 1 && a.len() % 2 != 0 {
+                a.push(Scalar::zero());
+                b.push(Scalar::zero());
+            }
             let ip = inner_product(&a, &b);
 
-            let G_factors: Vec<Scalar> = iter::repeat(Scalar::one()).take(*n).collect();
+            let G_factors: Vec<Scalar> = iter::repeat(Scalar::one()).take(even_n).collect();
             // y_inv is (the inverse of) a random challenge
             let y_inv = Scalar::random(&mut rng);
-            let H_factors: Vec<Scalar> = exp_iter(y_inv).take(*n).collect();
+            let H_factors: Vec<Scalar> = exp_iter(y_inv).take(even_n).collect();
             // F is chosen randomly by the verifier.
             let F = RistrettoPoint::random(&mut rng);
             // blinding factor in the commitment, known to prover.
@@ -161,8 +182,8 @@ fn verify_ipp_helper(c: &mut Criterion) {
                 &R,
                 alpha,
                 &F,
-                &G_factors[..],
-                &H_factors[..],
+                &G_factors,
+                &H_factors,
                 G.clone(),
                 H.clone(),
                 a.clone(),
@@ -180,14 +201,13 @@ fn verify_ipp_helper(c: &mut Criterion) {
 
             let P = RistrettoPoint::vartime_multiscalar_mul(
                 a_prime.chain(b_prime).chain(iter::once(ip)).chain(iter::once(alpha)),
-                G.iter().chain(H.iter()).chain(iter::once(&Q)).chain(iter::once(&R))
-            );
+                G.iter().take(even_n).chain(H.iter().take(even_n)).chain(iter::once(&Q)).chain(iter::once(&R)));
 
             // Verify ipp
             bench.iter(|| {
                 let mut verifier = Transcript::new(b"IPPBenchmark");
                 ipp.verify(
-                    *n,
+                    even_n,
                     &mut verifier,
                     y_inv,
                     &P,
