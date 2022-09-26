@@ -84,10 +84,6 @@ impl ZKInnerProductProof {
         assert_eq!(G_factors.len(), n);
         assert_eq!(H_factors.len(), n);
 
-        // All of the input vectors must have a length that is a power of two.
-        //assert!(n.is_power_of_two());
-        assert!(n % 2 == 0 || n == 1);
-
         transcript.innerproduct_domain_sep(n as u64);
 
         let mut L_vec = Vec::with_capacity(depth);
@@ -674,6 +670,11 @@ mod tests {
     #[test]
     fn make_ipp_32() {
         test_helper_create(32);
+    }
+
+    #[test]
+    fn make_ipp_34() {
+        test_helper_create(34);
     }
 
     
