@@ -29,7 +29,7 @@ static TEST_SIZES: [usize; 69] = [
 
 fn create_zk_ipp_helper(c: &mut Criterion) {
     c.bench_function_over_inputs(
-        "ZK inner product proof creation",
+        "create_zk_ipp: ZK inner product proof creation",
         move |bench, n| {
             let mut transcript = Transcript::new(b"IPPBenchmark");
 
@@ -141,7 +141,7 @@ criterion_group! {
 
 fn verify_zk_ipp_helper(c: &mut Criterion) {
     c.bench_function_over_inputs(
-        "ZK inner product proof verification",
+        "verify_zk_ipp: ZK inner product proof verification",
         move |bench, n| {
             let mut transcript = Transcript::new(b"IPPBenchmark");
 
