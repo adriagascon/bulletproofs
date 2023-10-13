@@ -20,11 +20,17 @@ use sha3::Sha3_512;
 
 
 /// Different zkIPP input vector lengths to try
-static TEST_SIZES: [usize; 5] = [34, 64, 1024, 16384, 131072];
+static TEST_SIZES: [usize; 104] = [
+    18, 34, 66, 132, 262, 522, 1044, 2086, 4170, 8340, 16678, 33354, 66708, 133414, 266826, 533652, 1067302, 2134602,
+    68, 134, 266, 532, 1062, 2122, 4244, 8486, 16970, 33940, 67878, 135754, 271508, 543014, 1086026, 2172052,
+    194, 258, 388, 648, 1166, 2202, 4276, 8424, 16718, 33306, 66484, 132840, 265550, 530970, 1061812, 2123496, 4246862, 8493594,
+    260, 390, 650, 1172, 2214, 4298, 8468, 16806, 33482, 66836, 133542, 266954, 533780, 1067430, 2134730, 4269332, 8538534,
+    198, 262, 264, 392, 394, 652, 654, 1170, 1176, 2206, 2218, 4280, 4302, 8428, 8472, 16722, 16810, 33310, 33486, 66488, 66840, 132844, 133546, 265554, 266958, 530974, 533784, 1061816, 1067434, 2123500, 2134734, 4246866, 4269336, 8493598, 8538538,
+];
 
-fn create_ipp_helper(c: &mut Criterion) {
+fn create_zk_ipp_helper(c: &mut Criterion) {
     c.bench_function_over_inputs(
-        "ZK inner product proof creation",
+        "create_zk_ipp: ZK inner product proof creation",
         move |bench, n| {
             let mut transcript = Transcript::new(b"IPPBenchmark");
 
@@ -129,14 +135,14 @@ pub fn inner_product(a: &[Scalar], b: &[Scalar]) -> Scalar {
 }
 
 criterion_group! {
-    name = create_ipp;
+    name = create_zk_ipp;
     config = Criterion::default().sample_size(10);
-    targets = create_ipp_helper,
+    targets = create_zk_ipp_helper,
 }
 
-fn verify_ipp_helper(c: &mut Criterion) {
+fn verify_zk_ipp_helper(c: &mut Criterion) {
     c.bench_function_over_inputs(
-        "ZK inner product proof verification",
+        "verify_zk_ipp: ZK inner product proof verification",
         move |bench, n| {
             let mut transcript = Transcript::new(b"IPPBenchmark");
 
@@ -224,9 +230,9 @@ fn verify_ipp_helper(c: &mut Criterion) {
 }
 
 criterion_group! {
-    name = verify_ipp;
+    name = verify_zk_ipp;
     config = Criterion::default().sample_size(10);
-    targets = verify_ipp_helper,
+    targets = verify_zk_ipp_helper,
 }
 
-criterion_main!(create_ipp, verify_ipp);
+criterion_main!(create_zk_ipp, verify_zk_ipp);
